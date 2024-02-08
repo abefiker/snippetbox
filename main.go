@@ -42,6 +42,10 @@ func newSaiyan(name string, power int) Saiyan {
 	}
 }
 
+func changeArray(a *[3]int) {
+    a[0] = 20
+}
+
 func main() {
 	Person1 := Person{
 		Name: "Abemelek",
@@ -63,7 +67,7 @@ func main() {
 
 	goku := newSaiyan("Abemelek", 2000)
 	fmt.Printf("my name is %s and i have power of %d", goku.Name, goku.Power)
-	fmt.Print()
+	fmt.Println()
 
 	gohan := &Saiyan{
 		Name:  "Abemelek",
@@ -75,9 +79,17 @@ func main() {
 		},
 	}
 	fmt.Printf("my name is %s and i have power of %d , my father is %s and his power is %d", gohan.Name, gohan.Power, gohan.Father.Name, gohan.Father.Power)
-
+	fmt.Println()
 	scores := [4]int{43,25,89,22}
-	for index , value := range scores{
-		fmt.Println(index,value)
+	for i:=0; i < len(scores); i++{
+		fmt.Println(scores[i])
 	}
+	for index ,value := range scores{
+		fmt.Printf("index = %d its value %d ",index,value)
+	}
+	fmt.Println()
+
+	arr3 := [3]int{1,2,3}
+	changeArray(&arr3)
+	fmt.Println(arr3)
 }
