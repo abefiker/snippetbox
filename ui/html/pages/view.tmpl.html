@@ -8,8 +8,8 @@
         </div>
         <pre><code>{{.Content}}</code></pre>
         <div class='metadata'>
-            <time>Created: {{.Created.Format "January 02, 2006"}}</time>
-            <time>Expires: {{.Expires.Format "January 02, 2006"}}</time>
+            <time>Created: {{humanDate .Created}}</time>
+            <time>Expires: {{humanDate .Expires}}</time>
         </div>
     </div>
     {{end}}
