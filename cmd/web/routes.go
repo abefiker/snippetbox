@@ -19,5 +19,5 @@ func (app *application) routes() http.Handler {
 	// Because secureHeaders is just a function, and the function returns a
 	// http.Handler we don't need to do anything else.
 
-	return secureHeaders(mux)
+	return app.logRequest(secureHeaders(mux))
 }
