@@ -3,10 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/abefiker/snippetbox/internal/models"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/abefiker/snippetbox/internal/models"
+	"github.com/julienschmidt/httprouter"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +59,6 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 
-	
 	err := r.ParseForm()
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
@@ -69,6 +71,26 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
+	}
+
+	fieldErrors := make(map[string]string)
+
+	if strings.TrimSpace(title) == "" {
+		fieldErrors["title"] = "this field can not be blank"
+	} else if utf8.RuneCountInString(title) > 100 {
+		fieldErrors["title"] = "This field cannot be more than 100 characters long"
+	}
+
+	if strings.TrimSpace(content) == "" {
+		fieldErrors["content"] = "this field can not be blank"
+	}
+	if expires != 1 || expires != 7 || expires != 365 {
+		fieldErrors["expires"] = "this field must be equal to 1 , 7 ,365"
+	}
+
+	if len(fieldErrors) > 0 {
+		fmt.Fprint(w, fieldErrors)
+		return
 	}
 
 	id, err := app.snippets.Insert(title, content, expires)
