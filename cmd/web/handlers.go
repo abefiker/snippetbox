@@ -55,7 +55,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	
+
 	title := "O snail"
 	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
 	expires := 7
@@ -69,5 +69,6 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Display the form for creating a new snippet..."))
+	data := app.newTemplateData(r)
+	app.render(w, http.StatusOK, "create.tmpl.html", data)
 }
