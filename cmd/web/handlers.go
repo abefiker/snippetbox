@@ -3,18 +3,27 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/abefiker/snippetbox/internal/models"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/abefiker/snippetbox/internal/models"
+	"github.com/julienschmidt/httprouter"
 )
 
 type snippetCreateForm struct {
 	Title       string
 	Content     string
 	Expires     int
+	FieldErrors map[string]string
+}
+
+type userSignupForm struct {
+	Name        string `form:"name"`
+	Email       string `form:"email"`
+	Password    string `form:"password"`
 	FieldErrors map[string]string
 }
 
@@ -132,10 +141,55 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Display a HTML form for signing up a new user...")
+	data := app.newTemplateData(r)
+	data.Form = userSignupForm{}
+	app.render(w, http.StatusOK, "signup.tmpl.html", data)
+
 }
 func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	form := userSignupForm{
+		Name:        r.PostForm.Get("name"),
+		Email:       r.PostForm.Get("email"),
+		Password:    r.PostForm.Get("password"),
+		FieldErrors: map[string]string{},
+	}
+
+	if strings.TrimSpace(form.Name) == "" {
+		form.FieldErrors["name"] = "Name cannot be blank"
+	}
+
+	// Check if email address is blank
+	if strings.TrimSpace(form.Email) == "" {
+		form.FieldErrors["email"] = "Email cannot be blank"
+	} else {
+		// Sanity check the format of the email address
+		if !isValidEmail(form.Email) {
+			form.FieldErrors["email"] = "Invalid email format"
+		}
+	}
+
+	// Check if password is blank and length is less than 8 characters
+	if strings.TrimSpace(form.Password) == "" {
+		form.FieldErrors["password"] = "Password cannot be blank"
+	} else if utf8.RuneCountInString(form.Password) < 8 {
+		form.FieldErrors["password"] = "Password must be at least 8 characters long"
+	}
+
+	if len(form.FieldErrors) > 0 {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "signup.tmpl.html", data)
+		return
+	}
+	
 	fmt.Fprintln(w, "Create a new user...")
+
+
 }
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Display a HTML form for logging in a user...")
@@ -145,4 +199,10 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 }
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Logout the user...")
+}
+
+func isValidEmail(email string) bool {
+	// Regular expression to match email format
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	return emailRegex.MatchString(email)
 }
