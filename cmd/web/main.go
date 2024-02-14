@@ -22,6 +22,7 @@ type application struct {
 	snippets       *models.SnippetModel
 	templateCache  map[string]*template.Template
 	sessionManager *scs.SessionManager
+	users          *models.UserModel
 }
 
 func main() {
@@ -54,6 +55,7 @@ func main() {
 		erroLog:        errorLog,
 		infoLog:        infoLog,
 		snippets:       &models.SnippetModel{DB: db},
+		users:          &models.UserModel{DB: db},
 		templateCache:  templateCache,
 		sessionManager: sessionManager,
 	}
