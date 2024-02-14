@@ -1,17 +1,19 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
-	"github.com/abefiker/snippetbox/internal/models"
-	"github.com/alexedwards/scs/mysqlstore"
-	"github.com/alexedwards/scs/v2"
-	_ "github.com/go-sql-driver/mysql"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/abefiker/snippetbox/internal/models"
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type application struct {
@@ -48,7 +50,6 @@ func main() {
 	sessionManager.Lifetime = 12 * time.Hour
 	sessionManager.Cookie.Secure = true
 
-
 	app := &application{
 		erroLog:        errorLog,
 		infoLog:        infoLog,
@@ -56,11 +57,15 @@ func main() {
 		templateCache:  templateCache,
 		sessionManager: sessionManager,
 	}
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
 
 	srv := &http.Server{
-		Addr:     *addr,
-		ErrorLog: errorLog,
-		Handler:  app.routes(),
+		Addr:      *addr,
+		ErrorLog:  errorLog,
+		Handler:   app.routes(),
+		TLSConfig: tlsConfig,
 	}
 
 	infoLog.Printf("Starting server on %s", *addr)
