@@ -219,7 +219,55 @@ func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Authenticate and login the user...")
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	form := userLoginForm{
+		Email:       r.PostForm.Get("email"),
+		Password:    r.PostForm.Get("password"),
+		FieldErrors: map[string]string{},
+	}
+	// Check if email address is blank
+	if strings.TrimSpace(form.Email) == "" {
+		form.FieldErrors["email"] = "Email cannot be blank"
+	} else {
+		// Sanity check the format of the email address
+		if !isValidEmail(form.Email) {
+			form.FieldErrors["email"] = "Invalid email format"
+		}
+	}
+
+	// Check if password is blank and length is less than 8 characters
+	if strings.TrimSpace(form.Password) == "" {
+		form.FieldErrors["password"] = "Password cannot be blank"
+	}
+
+	id, err := app.users.Authenticate(form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.FieldErrors["email"] = "Email is incorrect"
+			form.FieldErrors["password"] = "password is incorrect"
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, http.StatusUnprocessableEntity, "login.tmpl.html", data)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+	err = app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	// Add the ID of the current user to the session, so that they are now
+	// 'logged in'.
+	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
+	// Redirect the user to the create snippet page.
+	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
+
 }
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Logout the user...")
