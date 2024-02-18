@@ -12,6 +12,11 @@ import (
 
 func (app *application) serverError(w http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
+	if app.debug {
+		http.Error(w, trace, http.StatusInternalServerError)
+		return
+	}
+
 	app.erroLog.Output(2, trace)
 
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -58,7 +63,7 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 }
 
 func (app *application) isAuthenticated(r *http.Request) bool {
-	isAuthenticated ,ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
 	if !ok {
 		return false
 	}
@@ -70,6 +75,6 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 		CurrentYear:     time.Now().Year(),
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
-		CSRFToken: nosurf.Token(r),
+		CSRFToken:       nosurf.Token(r),
 	}
 }

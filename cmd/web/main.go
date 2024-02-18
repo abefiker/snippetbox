@@ -23,6 +23,7 @@ type application struct {
 	templateCache  map[string]*template.Template
 	sessionManager *scs.SessionManager
 	users          *models.UserModel
+	debug          bool
 }
 
 func main() {
@@ -58,16 +59,17 @@ func main() {
 		users:          &models.UserModel{DB: db},
 		templateCache:  templateCache,
 		sessionManager: sessionManager,
+		debug:          false,
 	}
 	tlsConfig := &tls.Config{
 		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
 	}
 
 	srv := &http.Server{
-		Addr:         *addr,
-		ErrorLog:     errorLog,
-		Handler:      app.routes(),
-		TLSConfig:    tlsConfig,
+		Addr:      *addr,
+		ErrorLog:  errorLog,
+		Handler:   app.routes(),
+		TLSConfig: tlsConfig,
 		// Add Idle, Read and Write timeouts to the server.
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
