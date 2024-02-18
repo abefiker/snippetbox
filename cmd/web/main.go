@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/abefiker/snippetbox/internal/models"
-	"github.com/alexedwards/scs/postgresstore"
+	"github.com/alexedwards/scs/mysqlstore"
 	"github.com/alexedwards/scs/v2"
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type application struct {
-	errorLog       *log.Logger 
+	erroLog        *log.Logger
 	infoLog        *log.Logger
 	snippets       *models.SnippetModel
 	templateCache  map[string]*template.Template
@@ -26,8 +26,11 @@ type application struct {
 }
 
 func main() {
+
 	addr := flag.String("addr", ":4000", "HTTP network address")
-	dsn := flag.String("dsn", "postgresql://kidabemelek:iy5UwHoM8qac@ep-wispy-truth-85154221.us-west-2.aws.neon.tech/snippetbox?sslmode=require", "PostgreSQL data source name")
+
+	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
+
 	flag.Parse()
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -44,12 +47,12 @@ func main() {
 		errorLog.Fatal(err)
 	}
 	sessionManager := scs.New()
-	sessionManager.Store = postgresstore.NewWithCleanupInterval(db, 12*time.Hour)
+	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
 	sessionManager.Cookie.Secure = true
 
 	app := &application{
-		errorLog:       errorLog,
+		erroLog:        errorLog,
 		infoLog:        infoLog,
 		snippets:       &models.SnippetModel{DB: db},
 		users:          &models.UserModel{DB: db},
@@ -61,10 +64,10 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:      *addr,
-		ErrorLog:  errorLog,
-		Handler:   app.routes(),
-		TLSConfig: tlsConfig,
+		Addr:         *addr,
+		ErrorLog:     errorLog,
+		Handler:      app.routes(),
+		TLSConfig:    tlsConfig,
 		// Add Idle, Read and Write timeouts to the server.
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
@@ -77,7 +80,7 @@ func main() {
 }
 
 func openDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}

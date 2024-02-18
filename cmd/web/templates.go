@@ -2,7 +2,9 @@ package main
 
 import (
 	"github.com/abefiker/snippetbox/internal/models"
+	"github.com/abefiker/snippetbox/ui"
 	"html/template"
+	"io/fs"
 	"path/filepath"
 	"time"
 )
@@ -32,7 +34,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	// match the pattern "./ui/html/pages/*.tmpl". This will essentially gives
 	// us a slice of all the filepaths for our application 'page' templates
 	// like: [ui/html/pages/home.tmpl ui/html/pages/view.tmpl]
-	pages, err := filepath.Glob("./ui/html/pages/*.tmpl.html")
+	pages, err := fs.Glob(ui.Files, "html/pages/*.tmpl.html")
 	if err != nil {
 		return nil, err
 	}
@@ -42,24 +44,16 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// and assign it to the name variable.
 		name := filepath.Base(page)
 		// Parse the base template file into a template set.
-
-		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl.html")
-		if err != nil {
-			return nil, err
-		}
-		// Call ParseGlob() *on this template set* to add any partials.
-		ts, err = ts.ParseGlob("./ui/html/partials/*.tmpl.html")
-		if err != nil {
-			return nil, err
+		patterns := []string{
+			"html/base.tmpl.html",
+			"html/partials/*.tmpl.html",
+			page,
 		}
 
-		// Parse the files into a template set.
-		ts, err = ts.ParseFiles(page)
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
 		if err != nil {
 			return nil, err
 		}
-		// Add the template set to the map, using the name of the page
-		// (like 'home.tmpl') as the key.
 		cache[name] = ts
 	}
 	// Return the map.

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"net/http"
+
+	"github.com/abefiker/snippetbox/ui"
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
-	"net/http"
 )
 
 // Update the signature for the routes() method so that it returns a
@@ -14,12 +16,12 @@ func (app *application) routes() http.Handler {
 		app.notFound(w)
 	})
 	// Leave the static files route unchanged.
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+	fileServer := http.FileServer(http.FS(ui.Files))
+	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 	// Create a new middleware chain containing the middleware specific to our
 	// dynamic application routes. For now, this chain will only contain the
 	// LoadAndSave session middleware but we'll add more to it later.
-	dynamic := alice.New(app.sessionManager.LoadAndSave,noSurf)
+	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 	// Update these routes to use the new dynamic middleware chain followed by
 	// the appropriate handler function. Note that because the alice ThenFunc()
 	// method returns a http.Handler (rather than a http.HandlerFunc) we also
