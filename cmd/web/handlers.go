@@ -238,6 +238,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 			form.FieldErrors["email"] = "Invalid email format"
 		}
 	}
+
 	// Check if password is blank and length is less than 8 characters
 	if strings.TrimSpace(form.Password) == "" {
 		form.FieldErrors["password"] = "Password cannot be blank"
